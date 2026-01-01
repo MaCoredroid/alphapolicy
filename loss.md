@@ -192,7 +192,7 @@ The Sharpe-style term is a deliberate “policy-aware” objective:
 
 ---
 
-## 7) Empirical observations (as reflected in the run docs you cited)
+## 7) Empirical observations (as reflected in referenced run docs)
 
 * **CE + CRPS is not an IC objective.** It can improve CE/CRPS without improving rank IC; this is expected because proper scoring rules target calibration, not ordering (see `docs/run103_debug.md`).
 * **CRPS-only with high weight can hurt generalization.** Example: run110 notes improved train IC but degraded val/test IC under CRPS-only at high weight (see `docs/run110_run.md`).
@@ -239,5 +239,3 @@ This is why we emphasize **distribution quality**: `mu` is not an independent re
 If `--use_cuda_graph` is enabled, the current CUDA-graph capture path computes **only an unweighted CE mean** during the captured step (it does not include CRPS or tail-weighting in that code path). If graphs are used in production training, this is a material divergence from the stated objective and should be addressed or disabled.
 
 ---
-
-If you want, I can reformat this into your repo’s preferred style (e.g., `docs/runXYZ_loss.md`) and add a short “TL;DR” header plus a single equation block that matches the exact code behavior (weighted normalization for CE/CRPS; unweighted Sharpe).

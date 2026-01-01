@@ -144,10 +144,10 @@ Implemented in `episode_objective()` as a deterministic differentiable unroll ov
 For day `t`, the policy produces `w_t` from features at `t`, then PnL uses next day returns:
 
 [
-\text{pnl}*t
-= \sum_i w*{t,i} \cdot \text{ret}*{t+1,i}
-;-; \text{bench}*{t+1}
-;-; \text{cost} \cdot \text{turnover}_t
+\text{pnl}_t
+= \sum_i w_{t,i} \cdot \text{ret}_{t+1,i}
+- \text{bench}_{t+1}
+- \text{cost} \cdot \text{turnover}_t
 ]
 
 Where:
@@ -155,7 +155,7 @@ Where:
 * `bench_{t+1}` is `spy_ret[t+1]` if available, else `0`.
 * Turnover is:
   [
-  \text{turnover}*t = 0.5 \sum_i |w*{t,i} - w_{t-1,i}|
+\text{turnover}_t = 0.5 \sum_i |w_{t,i} - w_{t-1,i}|
   ]
 * Transaction cost uses `cost = cost_bps × 1e-4` multiplied by turnover.
 
@@ -252,7 +252,7 @@ Operationally, it scales weights after the constrained softmax transformation:
 
 # 6) Correct evaluation logic (important implementation note)
 
-Your current evaluator (`scripts/eval_run130_policy.py`) is **not run133-correct**, because:
+The current evaluator (`scripts/eval_run130_policy.py`) is **not run133-correct**, because:
 
 1. It loads a policy definition that **does not include the risk head**, and
 2. It does not apply `risk_gate` to weights.
@@ -334,5 +334,3 @@ Key knobs and their effects:
 * `score_noise_std`: improves robustness; too high can degrade convergence.
 
 ---
-
-If you want, I can also provide a “drop-in” `eval_run133_policy.py` skeleton consistent with your current `eval_run130_policy.py` logging format (including the `daily.csv` and `trades.csv` columns above), but the write-up above reflects the model as implemented in `run133_train_portfolio.py`.

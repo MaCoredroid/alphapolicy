@@ -113,12 +113,12 @@ This split makes the system easier to evaluate, easier to reproduce, and more cr
 
 * Universe is pinned to `data/run102_fullseq/run100_manifest.json` (~518 tickers). Factors include **SPY, QQQ, VIX, BTC**.
 * Market/region is not explicitly documented; implied to be largely US equities given SPY/QQQ usage.
-* **Survivorship-free handling:** marked “Yes” in your notes; the exact method (point-in-time membership, delisting inclusion, etc.) should be documented in the manifest generation pipeline (currently not described in the docs you shared).
+* **Survivorship-free handling:** marked “Yes” in current notes; the exact method (point-in-time membership, delisting inclusion, etc.) should be documented in the manifest generation pipeline (not currently described in repo docs).
 
 ### 2.2 Price data source
 
 * Prices are refreshed from **Yahoo** via `scripts/fetch_data.py` / `scripts/fetch_yahoo_equity` (plus crypto via Yahoo).
-* Corporate actions handling is **not specified**. (For paper-grade rigor, you should clarify whether “Adjusted Close” is used, whether splits/dividends are adjusted, and how delistings are treated.)
+* **Corporate actions handling is not specified.** For paper-grade rigor, clarify whether “Adjusted Close” is used, how splits/dividends are adjusted, and how delistings are treated.
 
 ### 2.3 News data
 
@@ -160,9 +160,9 @@ Core components:
   * A **trainable numeric MLP** over derived features from normalized OHLCV+return.
   * A **token-wise sigmoid gate** over concatenated representations:
     [
-    g_{t,i} = \sigma(W \cdot [h^\text{MLP}*{t,i}; h^\text{Kronos}*{t,i}] + b),
+    g_{t,i} = \sigma(W \cdot [h^\text{MLP}_{t,i}; h^\text{Kronos}_{t,i}] + b),
     \quad
-    h_{t,i} = g_{t,i}h^\text{MLP}*{t,i} + (1-g*{t,i})h^\text{Kronos}_{t,i}
+    h_{t,i} = g_{t,i} h^\text{MLP}_{t,i} + (1-g_{t,i}) h^\text{Kronos}_{t,i}
     ]
 * Default gate bias is -2.0, and `--gate_init_prob` can bias the initial mixture while keeping the gate learned.
 
@@ -181,7 +181,7 @@ Core components:
 **(C) Cross-asset modules**
 
 * Factor cross-attention exists in the model (`FactorCrossAttention`).
-* Cross-ticker attention exists and is **enabled** in your Run123 description; implemented via `CrossTickerAttention` in the multi-ticker forward path.
+* Cross-ticker attention exists and is **enabled** in the Run123 description; implemented via `CrossTickerAttention` in the multi-ticker forward path.
 
 **(D) Output head: Shared ordinal distribution**
 
@@ -206,7 +206,7 @@ Training supports:
   ]
 * Optional differentiable Sharpe-style term on (\mu\cdot r) (disabled unless `--lambda_sharpe > 0`)
 
-**Note:** your docs do not specify the exact CE/CRPS weights for Run123 training. In the repo write-up, state them as “configurable flags” and, if possible, add the exact command/config used to produce `run123/epoch_1.pt`.
+**Note:** repo docs do not specify the exact CE/CRPS weights for Run123 training. In the write-up, treat them as configurable flags and, if possible, add the exact command/config used to produce `run123/epoch_1.pt`.
 
 ## 5. PolicyModel (Run133 portfolio policy)
 
@@ -260,11 +260,11 @@ Global (5 dims):
 
 Per-day PnL:
 [
-\text{pnl}*t = \sum_i w*{t,i}\cdot r_{t+1,i} ;-; r^\text{SPY}_{t+1};-;c\cdot \text{turnover}*t
+\text{pnl}_t = \sum_i w_{t,i}\cdot r_{t+1,i} - r^\text{SPY}_{t+1} - c\cdot \text{turnover}_t
 ]
 Turnover:
 [
-\text{turnover}*t = 0.5\sum_i |w*{t,i}-w*{t-1,i}|
+\text{turnover}_t = 0.5\sum_i |w_{t,i}-w_{t-1,i}|
 ]
 Sharpe is annualized from daily pnl.
 
@@ -325,35 +325,35 @@ Using `scripts/run125_alpha_policy.py` on:
 
 **Golden pre-2019 (2010–2018, cost 5 bps, TopK K=50):**
 
-* Reported overall Sharpe **0.6924** (note: your recomputation including zero-trade days gives Sharpe ~0.428; this discrepancy should be resolved and explained in the final write-up with a single canonical computation).
+* Reported overall Sharpe **0.6924** (note: recomputation including zero-trade days gives Sharpe ~0.428; resolve this discrepancy and use a single canonical computation in the final write-up).
 * Year-by-year shows strong regime sensitivity: negative years (2011, 2015, 2018) and strong years (2013, 2017).
 
-This is a credible way to present alpha utility: a simple allocator can extract signal, but it’s not uniformly strong across regimes and needs a better decision layer (motivation for PolicyModel).
+This framing highlights alpha utility: a simple allocator can extract signal, but performance is regime-sensitive and motivates a stronger decision layer (PolicyModel).
 
 ### 7.2 Policy evaluation (Run133 epoch selection on 2025)
 
-From your `logs/run133_portfolio_latest/run133_epoch7_*` summary (2025-01 onward; ~239 days plus a preview row):
+From `logs/run133_portfolio_latest/run133_epoch7_*` summary (2025-01 onward; ~239 days plus a preview row):
 
 * raw Sharpe ≈ **1.50**
 * max drawdown ≈ **-0.178**
 * mean turnover ≈ **0.179**
 * mean effK ≈ **3.42**
 
-**Critical implementation note:** the evaluation script you used for the equity curves is `scripts/eval_run130_policy.py`, which loads `CrossSectionPolicy` from `run129_train_portfolio.py` and does `strict=False`. As a result, **Run133 risk gating is not applied** in those plots (risk head ignored). The paper must either:
+**Critical implementation note:** the current evaluation script for the equity curves is `scripts/eval_run130_policy.py`, which loads `CrossSectionPolicy` from `run129_train_portfolio.py` and does `strict=False`. As a result, **Run133 risk gating is not applied** in those plots (risk head ignored). The paper should either:
 
 * update the evaluator to use the Run133 class and report “risk gate on” results, or
 * explicitly label the results as “Run133 without risk gating.”
 
-### 7.3 Alpha IC summary (from your earlier evaluation block)
+### 7.3 Alpha IC summary (from earlier evaluation block)
 
-You provided an IC distribution summary with:
+An IC distribution summary reports:
 
 * agg ic ≈ **0.0218**
 * mean per-window IC ≈ **0.0359** (n=459)
 * coverage ≈ **0.987**
 * turnover ≈ **0.0025**
 
-In the final paper, you should define exactly:
+In the final paper, define exactly:
 
 * what constitutes an “evaluation window,”
 * how IC is aggregated,
@@ -361,7 +361,7 @@ In the final paper, you should define exactly:
 
 ## 8. Credibility and attribution (what must be added)
 
-Policy performance can support alpha credibility only if we show dependence on the alpha signal. The paper/repo should include the following ablations:
+Policy performance supports alpha credibility only if it demonstrates dependence on the alpha signal. The paper/repo should include the following ablations:
 
 1. **No-μ policy:** remove `mu` and `mu_rank`.
 2. **Shuffled-μ policy:** shuffle `mu` across tickers per day.
@@ -374,11 +374,11 @@ These experiments are not documented yet; adding them is the fastest path to mak
 ## 9. Limitations and risks (state these explicitly)
 
 * **Data/licensing:** prices come from Yahoo; redistribution may be subject to provider terms. Prefer shipping fetch scripts and small example artifacts rather than full historical datasets unless terms allow it.
-* **Corporate actions and price definition** not specified; must clarify for accurate return computation.
-* **Survivorship-free handling** is asserted but not documented; must show how the manifest is constructed and how delistings are handled.
-* **Evaluator mismatch** currently prevents risk gate evaluation; must fix for consistency.
+* **Corporate actions and price definition** not specified; should be clarified for accurate return computation.
+* **Survivorship-free handling** is asserted but not documented; should show how the manifest is constructed and how delistings are handled.
+* **Evaluator mismatch** currently prevents risk gate evaluation; should be fixed for consistency.
 * **Regime sensitivity:** pre-2019 year-by-year results include negative years; should be presented honestly.
-* **SOTA claims:** avoid “state-of-the-art” unless you replicate standardized benchmarks under matched protocols.
+* **SOTA claims:** avoid “state-of-the-art” unless standardized benchmarks are replicated under matched protocols.
 
 ## 10. Reproducibility and release artifacts
 
@@ -423,5 +423,5 @@ Recommended improvements before public launch:
 - `train/run101_multi_dataset.py`: Aligned multi-ticker dataset used to dump signals.
 - `train/run100_model.py`: Run100 model definition used for inference.
 - `train/fullseq_fusion.py`: News pooling and price-news fusion layers used by the Run100 model.
-- `requirements_llm.txt`: Python dependency list (adjust to your environment).
+- `requirements_llm.txt`: Python dependency list (adjust to local environment).
 - `third_party/Kronos/`: Trimmed Kronos model code needed for inference; see `third_party/Kronos/README.md` and `third_party/Kronos/LICENSE`.

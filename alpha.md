@@ -40,7 +40,7 @@ It emits a **single sample** containing all tickers aligned to the same max sequ
 For a universe of `N` tickers and sequence length `L`:
 
 - `price_seq_stack`: **[N, L, 6]**  
-  Normalized OHLCV + a return channel (see your run101 builder; in this repo the MLP feature builder uses:
+  Normalized OHLCV + a return channel (see the run101 builder; in this repo the MLP feature builder uses:
   open/high/low/close/volume_z + `lr` in the last channel).
 
 - `news_emb_stack`: **[N, L, K, Dn]**  
@@ -62,7 +62,7 @@ For a universe of `N` tickers and sequence length `L`:
 
 ### 2.2 Important note: news is effectively disabled in the current cross-ticker dataset
 
-Your `Run101MultiTickerDataset` currently sets:
+`Run101MultiTickerDataset` currently sets:
 
 - `max_k = 0` and pads news to K=0 “to avoid huge dense padding”.
 
@@ -71,9 +71,9 @@ That means the emitted tensors are effectively:
 - `news_emb_stack`: **[N, L, 0, Dn]**
 - `news_mask_stack`: **[N, L, 0]**
 
-So for the **release configuration** where you mostly run price-only, the news path is structurally present but contributes no information (which is consistent with your stated current usage).
+So for the **release configuration** where runs are mostly price-only, the news path is structurally present but contributes no information (consistent with current usage).
 
-If you later want *real* news in the cross-ticker path, you’ll need to lift that `max_k=0` constraint and implement masked padding to a reasonable K.
+To enable *real* news in the cross-ticker path, lift the `max_k=0` constraint and implement masked padding to a reasonable K.
 
 ---
 
@@ -253,7 +253,7 @@ AlphaModel uses masks in three distinct roles:
 
 2) **Split mask** (`split_mask_stack[train|val|test]`):
    - Used to gate labels and optionally features.
-   - In your `Run101MultiTickerDataset`, you also apply the split mask to features to avoid accidental peeking across split boundaries in non-causal settings.
+   - In `Run101MultiTickerDataset`, the split mask is also applied to features to avoid accidental peeking across split boundaries in non-causal settings.
 
 3) **Target selection** (`target_indices`):
    - Context tickers can be present (e.g., VIX) but excluded from the head and losses.
@@ -324,4 +324,3 @@ The single-ticker `forward` additionally may expose:
 
 In this repo, step (3) is implemented in:
 - `scripts/run125_alpha_policy.py :: compute_mu`
-

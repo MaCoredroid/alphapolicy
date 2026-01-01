@@ -6,7 +6,7 @@ According to a document from **2025-12-15**, the project’s “alpha → policy
 
 ### 8.1 Phase 0 — Prototype loop: learn “what matters” and instrument everything (Runs ~8–51)
 
-The earliest iterations were not primarily about “winning Sharpe,” but about *making the system measurable*. Runs 8–14 established the first working Kronos-based forecasting backbone and, importantly, surfaced a recurring pattern: **you can get decent calibration/CE without getting consistent IC/Sharpe**, and gates can collapse to “no-trade” unless the evaluator and loss encourage non-degenerate behavior. 
+The earliest iterations were not primarily about “winning Sharpe,” but about *making the system measurable*. Runs 8–14 established the first working Kronos-based forecasting backbone and, importantly, surfaced a recurring pattern: **decent calibration/CE can occur without consistent IC/Sharpe**, and gates can collapse to “no-trade” unless the evaluator and loss encourage non-degenerate behavior. 
 
 The multi-asset era (Runs 25–31+) introduced a “mini-universe” workflow (e.g., MARA/LULU/HIMS plus factor assets like SPY/BTC/VIX) that acted as a *fast design wind tunnel*: asymmetric bins, lag gating, bootstrap-based gate selection, factor-bank loading, stop-grad anneals, and hardened evaluators were all explored in a tightly documented cadence. 
 
@@ -14,7 +14,7 @@ A key operational meta-lesson also emerged here: **runbooks that specify exact e
 
 **What this phase taught us**
 
-* If you can’t reproduce “the same run” (config, gates, costs, coverage), you can’t tell whether you learned anything.
+* Without reproducible runs (config, gates, costs, coverage), it is difficult to tell whether progress occurred.
 * Much of the early progress came from evaluator/selection discipline as much as from model changes. 
 
 ---
@@ -54,7 +54,7 @@ The runbook then proposes a concrete remedy—initializing the gate to prefer th
 
 **Retrospective interpretation**
 
-* This phase wasn’t just “a model tweak”—it codified a scalable design principle: **keep the expensive/time-series foundation stable, and evolve a small, controllable adaptation layer**. The gate statistic (0.12) is a perfect example of why runbooked diagnostics matter: without it, you might falsely assume the new module is “doing work.” 
+* This phase wasn’t just “a model tweak”—it codified a scalable design principle: **keep the expensive/time-series foundation stable, and evolve a small, controllable adaptation layer**. The gate statistic (0.12) is a perfect example of why runbooked diagnostics matter: without it, it is easy to overestimate the new module’s contribution. 
 
 ---
 
@@ -80,7 +80,7 @@ On the “golden” **pre-2019 backtest**, TopK long-only (K=50) shows Sharpe **
 
 Run133 formalized the next step: a trainable **cross-sectional policy** evaluated against SPY with costs and constraints, and (in the checkpoint) an additional risk head. The evaluation runbook notes an important implementation detail: the evaluation script loads the policy with `strict=False` and therefore **ignores extra checkpoint keys like `risk_head.*`**. 
 
-This is a quintessential “runbook is an asset” moment: the work doesn’t just build the component—it documents that **the evaluator currently does not apply the risk head**, which affects how you interpret any “risk-gated” claims. 
+This is a quintessential “runbook is an asset” moment: the work doesn’t just build the component—it documents that **the evaluator currently does not apply the risk head**, which affects interpretation of any “risk-gated” claims. 
 
 ---
 
@@ -98,7 +98,7 @@ A crucial deployment nuance is called out explicitly: **the ticker universe shou
 **What this phase taught us**
 
 * The “real product” is not only a model; it’s a *refreshable, deterministic pipeline* (data → sequences → signals → portfolio eval).
-* Cross-ticker models make the universe definition part of the model; “adding ETH” is a model change unless you retrain. 
+* Cross-ticker models make the universe definition part of the model; “adding ETH” is a model change unless retrained. 
 
 ---
 
@@ -120,5 +120,4 @@ A crucial deployment nuance is called out explicitly: **the ticker universe shou
 * A learned policy attempts cross-sectional allocation (run133),
 * A refresh pipeline operationalizes the stack (run134). 
 
-**One “next fix” is glaringly high leverage.** If the intent is to claim “risk gate + drawdown penalty,” the evaluation and live pipeline should actually apply the risk head (or explicitly state it is currently ignored). The run133 eval notes already document this mismatch—turning that note into a patched evaluator is a natural next evolutionary step. 
-
+**One high-leverage fix remains.** If the intent is to claim “risk gate + drawdown penalty,” the evaluation and live pipeline should apply the risk head (or explicitly state it is currently ignored). The run133 eval notes already document this mismatch; implementing a patched evaluator is a natural next step. 

@@ -1,7 +1,3 @@
-Below is a **drop-in first doc** you can place into your repo as `docs/data_integrity_and_leakage.md` (or `docs/leakage.md`). It is written to be “reviewer-grade”: explicit about what is guaranteed, what was previously wrong, what changed, and what remains unknown.
-
----
-
 # Data Integrity and Leakage Controls
 
 This document explains how the current codebase prevents **information leakage** in both training and evaluation for the **AlphaModel** (run100/run101/run102 lineage; deployed as run123 checkpoint) and the downstream **PolicyModel** (run133 lineage). It also records the specific leakage vectors discovered earlier and how they were fixed.
@@ -140,7 +136,7 @@ This is explicitly documented in the run133/run134 pipeline.
 
 **Repo references:**
 
-* Run133 policy overview (in your internal notes)
+* Run133 policy overview (internal notes)
 * `docs/run134_inference_commands.md`
 
 ---
@@ -214,7 +210,7 @@ This exists to provide a leakage-resistant evaluation path distinct from the tra
 
 The project also uses a pre-2019 OOS window (2010–2018) as an additional “regime” test. This is **chronologically non-overlapping** with the 2019–2024 training regime used in the later pipeline.
 
-(Exact build details depend on your golden manifest builder and bin-edge pinning choices; see “Unknowns” below for what should be made explicit in public docs.)
+(Exact build details depend on the golden manifest builder and bin-edge pinning choices; see “Unknowns” below for what should be made explicit in public docs.)
 
 ---
 
@@ -289,7 +285,7 @@ These items are not fully specified in the current repo docs (or not explicitly 
 
 ## 12. Recommended next steps (to make this reviewer-proof)
 
-If you want this project to withstand skeptical review (quant funds + applied science interview loops), add a lightweight “Leakage Test Suite”:
+To withstand skeptical review (quant funds + applied science interview loops), add a lightweight “Leakage Test Suite”:
 
 ### 12.1 Add a script: `scripts/audit_no_leakage.py`
 
@@ -344,5 +340,3 @@ A: Not in run134 live, which uses price-only sequences and no news embeddings.
 * `docs/run134_inference_commands.md`
 
 ---
-
-If you want, I can also write the companion `scripts/audit_no_leakage.py` spec (not code yet, just a crisp checklist + expected asserts), so the repo has an executable “trust gate” rather than only narrative documentation.
