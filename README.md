@@ -1,3 +1,84 @@
+## AlphaPolicy
+
+**AlphaPolicy** is a reproducible two-stage multi-asset research system:
+
+1. **AlphaModel (Run123)** produces daily per-ticker probabilistic return forecasts (a discrete distribution over return bins).
+2. **PolicyModel (Run133)** maps cached alpha summaries (`mu`, ranks, rolling realized returns, position state) into daily portfolio weights using a cross-sectional Transformer and a differentiable Sharpe-style objective with costs and constraints.
+
+This repo includes **code + checkpoints + cached signal artifacts** to reproduce the full pipeline.
+
+### What this is / isn’t
+
+* This is research software for experimentation and education.
+* Not investment advice. No claim of robustness across all markets, costs, or regimes.
+
+## Architecture overview
+
+**Stage A — AlphaModel**
+
+* Price encoder: frozen Kronos-mini tokens + trainable numeric MLP branch, fused by a token-wise gate.
+* Temporal model: causal transformer (TimeLLM).
+* Cross-asset modules: factor cross-attention + optional cross-ticker attention.
+* Output: ordinal/histogram distribution over next-day log return bins; `mu` is the expected return computed from bin probabilities and bin centers.
+
+**Stage B — PolicyModel**
+
+* Inputs per ticker (7): `mu`, `mu_rank`, `ret_1d/5d/20d`, `held_prev`, `live`
+* Global inputs (5): daily stats of `mu` and `ret_1d`
+* Cross-sectional encoder: TransformerEncoder over tickers
+* Outputs: daily long-only weights (softmax + caps); optional risk gating (run133)
+
+## Reproduce: end-to-end (2025 evaluation)
+
+High-level steps:
+
+1. Fetch latest prices (Yahoo)
+2. Build inference dataset (price-only)
+3. Dump alpha signals (Run123)
+4. Evaluate policy checkpoints (Run133) vs SPY
+
+Commands (see `docs/run134_inference_commands.md` for full scripts):
+
+* `scripts/fetch_data.py` (Yahoo refresh)
+* `scripts/build_run101_price_only_batch.py` (incremental sequences)
+* `scripts/build_run102_fullseq_auto.py` (`RUN100_ALL_SPLITS_TEST=1`)
+* `scripts/dump_run125_signals.py` (creates `.npz`)
+* `scripts/eval_run130_policy.py` (portfolio evaluation)
+
+## Key results (current)
+
+* 2024-Q4 test split (TopK allocator on alpha): Sharpe ~0.58 at 5 bps costs (K=50).
+* 2010–2018 golden set (TopK allocator on alpha): Sharpe reported ~0.69 (see `docs/run125_alpha_policy_report.md`; regime sensitivity exists).
+* 2025 policy eval (Run133 epoch 7): raw Sharpe ~1.50, max DD ~17.8%, mean turnover ~0.179, effK ~3.42 (see `logs/run133_portfolio_latest/`).
+
+**Important:** current `eval_run130_policy.py` ignores run133 risk gating due to `strict=False` loading into the older policy class. See `docs/evaluator_alignment.md`.
+
+## Roadmap (credibility upgrades)
+
+* Add attribution suite: no-μ / shuffled-μ / lagged-μ / μ-only
+* Fix evaluator to apply run133 risk gate
+* Add beta-to-SPY and excess-return metrics in daily logs
+* Document corporate actions / return definition / survivorship handling
+
+
+
+## Reproducibility
+
+Step-by-step:
+
+1. Fetch Yahoo prices
+2. Build inference dataset
+3. Dump signals
+4. Evaluate policy vs SPY
+
+## Credibility (how we validate)
+
+* We will report attribution ablations (no-μ / shuffled-μ / lagged-μ) to verify policy performance depends on alpha signal content.
+
+## Disclaimers
+
+Research only. Not financial advice. Data licensing may apply.
+
 ## Title
 
 **AlphaPolicy: A Reproducible Two-Stage Multi-Asset Alpha and Portfolio Policy System Using Distributional Forecasting and Cross-Sectional Allocation**
@@ -317,169 +398,6 @@ Recommended improvements before public launch:
 * Add attribution ablation scripts
 
 ---
-
-# 2) Release-grade README copy (repo front page)
-
-## AlphaPolicy
-
-**AlphaPolicy** is a reproducible two-stage multi-asset research system:
-
-1. **AlphaModel (Run123)** produces daily per-ticker probabilistic return forecasts (a discrete distribution over return bins).
-2. **PolicyModel (Run133)** maps cached alpha summaries (`mu`, ranks, rolling realized returns, position state) into daily portfolio weights using a cross-sectional Transformer and a differentiable Sharpe-style objective with costs and constraints.
-
-This repo includes **code + checkpoints + cached signal artifacts** to reproduce the full pipeline.
-
-### What this is / isn’t
-
-* This is research software for experimentation and education.
-* Not investment advice. No claim of robustness across all markets, costs, or regimes.
-
-## Architecture overview
-
-**Stage A — AlphaModel**
-
-* Price encoder: frozen Kronos-mini tokens + trainable numeric MLP branch, fused by a token-wise gate.
-* Temporal model: causal transformer (TimeLLM).
-* Cross-asset modules: factor cross-attention + optional cross-ticker attention.
-* Output: ordinal/histogram distribution over next-day log return bins; `mu` is the expected return computed from bin probabilities and bin centers.
-
-**Stage B — PolicyModel**
-
-* Inputs per ticker (7): `mu`, `mu_rank`, `ret_1d/5d/20d`, `held_prev`, `live`
-* Global inputs (5): daily stats of `mu` and `ret_1d`
-* Cross-sectional encoder: TransformerEncoder over tickers
-* Outputs: daily long-only weights (softmax + caps); optional risk gating (run133)
-
-## Reproduce: end-to-end (2025 evaluation)
-
-High-level steps:
-
-1. Fetch latest prices (Yahoo)
-2. Build inference dataset (price-only)
-3. Dump alpha signals (Run123)
-4. Evaluate policy checkpoints (Run133) vs SPY
-
-Commands (see `docs/run134_inference_commands.md` for full scripts):
-
-* `scripts/fetch_data.py` (Yahoo refresh)
-* `scripts/build_run101_price_only_batch.py` (incremental sequences)
-* `scripts/build_run102_fullseq_auto.py` (`RUN100_ALL_SPLITS_TEST=1`)
-* `scripts/dump_run125_signals.py` (creates `.npz`)
-* `scripts/eval_run130_policy.py` (portfolio evaluation)
-
-## Key results (current)
-
-* 2024-Q4 test split (TopK allocator on alpha): Sharpe ~0.58 at 5 bps costs (K=50).
-* 2010–2018 golden set (TopK allocator on alpha): Sharpe reported ~0.69 (see `docs/run125_alpha_policy_report.md`; regime sensitivity exists).
-* 2025 policy eval (Run133 epoch 7): raw Sharpe ~1.50, max DD ~17.8%, mean turnover ~0.179, effK ~3.42 (see `logs/run133_portfolio_latest/`).
-
-**Important:** current `eval_run130_policy.py` ignores run133 risk gating due to `strict=False` loading into the older policy class. See `docs/evaluator_alignment.md`.
-
-## Roadmap (credibility upgrades)
-
-* Add attribution suite: no-μ / shuffled-μ / lagged-μ / μ-only
-* Fix evaluator to apply run133 risk gate
-* Add beta-to-SPY and excess-return metrics in daily logs
-* Document corporate actions / return definition / survivorship handling
-
----
-
-# 3) Official website landing page copy (one-page structure)
-
-## Hero
-
-**AlphaPolicy**: open-source **alpha forecasting + portfolio policy** system
-Reproducible, modular, and evaluated across disjoint time windows.
-
-Buttons:
-
-* GitHub
-* Paper / Technical report
-* Reproduce results
-
-## What’s inside
-
-**AlphaModel (Run123)**
-
-* Produces daily alpha signals (`mu`) from price sequences via a frozen Kronos-mini encoder + numeric MLP gate and a causal transformer.
-* Outputs a return distribution (not just a point estimate).
-
-**PolicyModel (Run133)**
-
-* Cross-sectional Transformer that maps alpha signals to weights.
-* Optimizes a differentiable Sharpe objective with turnover costs and diversification constraints.
-
-## Results snapshot
-
-* 2024-Q4 test split: alpha→simple allocator baseline Sharpe ~0.58 (5 bps)
-* 2010–2018 golden set: alpha→simple allocator shows positive long-run Sharpe but regime sensitivity
-* 2025 evaluation: policy epoch 7 achieves raw Sharpe ~1.50 with max DD ~17.8%
-
-Add a small footnote:
-“Metrics depend on turnover/cost assumptions and exact evaluator configuration. See reproducibility docs.”
-
-## Reproducibility
-
-Step-by-step:
-
-1. Fetch Yahoo prices
-2. Build inference dataset
-3. Dump signals
-4. Evaluate policy vs SPY
-
-## Credibility (how we validate)
-
-* We will report attribution ablations (no-μ / shuffled-μ / lagged-μ) to verify policy performance depends on alpha signal content.
-
-## Disclaimers
-
-Research only. Not financial advice. Data licensing may apply.
-
----
-
-# 4) LinkedIn launch post (personal version)
-
-I’m open-sourcing **AlphaPolicy**, a two-stage research system that separates **alpha forecasting** from **portfolio allocation**:
-
-**1) AlphaModel (Run123):**
-A multi-asset model that outputs a **return distribution** (ordinal/histogram bins) and daily expected return signals (`mu`). The price path uses a **frozen Kronos-mini encoder** plus a **trainable numeric MLP branch** fused by a token-wise gate, then a causal transformer over time. Cross-ticker / factor modules are supported.
-
-**2) PolicyModel (Run133):**
-A cross-sectional **Transformer policy** that maps cached alpha summaries (`mu`, ranks, rolling realized returns, held state) to daily portfolio weights. It optimizes a differentiable Sharpe-style objective with turnover costs and diversification constraints (effective number of names), with optional drawdown/risk gating.
-
-Why I’m releasing it: to provide a **reproducible** reference implementation where you can trace the full path from **signals → allocations → portfolio outcomes**, and run attribution tests to validate whether the allocator’s edge depends on the alpha signal.
-
-Repo + reproducibility commands: [link]
-Technical write-up: [link]
-(Research only; not investment advice.)
-
----
-
-# 5) Two high-impact fixes before you publish (based on your exact setup)
-
-1. **Evaluator alignment (must fix)**
-
-* Right now, your 2025 equity curves use `eval_run130_policy.py` which loads the older policy class and ignores run133 risk gate weights.
-* For credibility, publish one “official evaluator” that matches the exact architecture you claim.
-
-2. **Attribution suite (must add)**
-   Add the ablations (no-μ / shuffled-μ / lagged-μ / μ-only / simple allocators). This is the single strongest “credibility amplifier” for hiring and for any paper.
-
----
-
-## Next step (so I can finalize this into your actual repo docs)
-
-If you confirm these three choices, I will lock the narrative and produce a polished v1 that you can paste directly into your repo:
-
-1. Project name: **AlphaPolicy** (OK?)
-2. Target positioning: **quant research + applied scientist** (balanced) or one primary?
-3. Do you want the public launch results to emphasize:
-
-   * **2025 policy eval**, or
-   * **pre-2019 golden set**, or
-   * **2024-Q4 test split** (most “standard” chronology)
-
-If you don’t answer, I’ll default to: AlphaPolicy name, balanced positioning, and highlight **2024-Q4 + 2025** with **pre-2019 as stress test**.
 
 ## File map
 - `docs/run134_inference_commands.md`: Runbook for refreshing prices, building sequences, dumping signals, and evaluating run133 portfolio checkpoints.
