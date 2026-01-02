@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it."
+
+title: "AlphaPolicy"
+type: software
+
+authors:
+  # Replace with your real name if you want formal citation.
+  # GitHub also supports the simpler `name:` field if you prefer a handle.
+  - name: "MaCoredroid"
+    affiliation: "Lumorik"
+
+repository-code: "https://github.com/MaCoredroid/alphapolicy"
+url: "https://ai.stock.lumorik.com/"
+
+
+license: "Apache-2.0"
+
+version: "0.1.0"
+date-released: "2026-01-02"
+
+keywords:
+  - "time series"
+  - "probabilistic forecasting"
+  - "CRPS"
+  - "portfolio optimization"
+  - "cross-sectional transformer"
+  - "quantitative finance"
+  - "machine learning"
+
+abstract: >
+  AlphaPolicy is a reproducible two-stage multi-asset research system.
+  Stage A (AlphaModel) produces discrete predictive return distributions and
+  an expected-return signal (mu). Stage B (PolicyModel) maps cached alpha
+  summaries to daily portfolio weights using a cross-sectional Transformer and
+  a differentiable objective with costs and constraints (e.g., turnover and
+  diversification controls). Research software; not investment advice.
+
+preferred-citation:
+  type: software
+  title: "AlphaPolicy: A reproducible two-stage alpha forecasting + portfolio policy system"
+  authors:
+    - name: "MaCoredroid"
+      affiliation: "Lumorik"
+  year: 2026
+  version: "0.1.0"
+  url: "https://ai.stock.lumorik.com/"
