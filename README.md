@@ -1,5 +1,13 @@
 ## AlphaPolicy
 
+<img src="run133_epoch7_vs_spy.png" width="1200" height="600" alt="Run133 epoch 7 equity curve vs SPY">
+
+Run133 policy equity curve vs SPY (epoch 7, SPY uses Yahoo Close). 2025-01-03 to 2025-12-15; Sharpe ~1.50, max DD ~17.8%, mean turnover ~0.180, equity ~1.36x.
+
+<img src="run123_pre2019_ic_hist.png" width="1200" height="600" alt="Run123 pre-2019 per-asset IC distribution">
+
+Run123 pre-2019 per-asset IC distribution (epoch 1, n=459 tickers). Mean IC ~0.036, median ~0.036; coverage ~0.987, turnover ~0.0025.
+
 **AlphaPolicy** is a reproducible two-stage multi-asset research system:
 
 1. **AlphaModel (Run123)** produces daily per-ticker probabilistic return forecasts (a discrete distribution over return bins).
