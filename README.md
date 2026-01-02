@@ -24,7 +24,15 @@ This repo includes **code + checkpoints + cached signal artifacts** to reproduce
 
 ## Architecture overview
 
+<img src="alphaPolicyModel.png" width="1200" alt="AlphaPolicy system architecture diagram">
+
+Two-stage system overview: AlphaModel produces per-ticker distributions and cached signals; PolicyModel maps them to daily weights under constraints.
+
 **Stage A — AlphaModel**
+
+<img src="alpha.png" width="1200" alt="AlphaModel architecture diagram">
+
+AlphaModel detail: price encoder (Kronos-mini + MLP gate), TimeLLM temporal backbone, cross-asset modules, ordinal head, and mu computation.
 
 * Price encoder: frozen Kronos-mini tokens + trainable numeric MLP branch, fused by a token-wise gate.
 * Temporal model: causal transformer (TimeLLM).
@@ -32,6 +40,10 @@ This repo includes **code + checkpoints + cached signal artifacts** to reproduce
 * Output: ordinal/histogram distribution over next-day log return bins; `mu` is the expected return computed from bin probabilities and bin centers.
 
 **Stage B — PolicyModel**
+
+<img src="policy.png" width="1200" alt="PolicyModel architecture diagram">
+
+PolicyModel detail: cross-sectional Transformer over tickers, score-to-weight constraints pipeline, and differentiable Sharpe-style objective.
 
 * Inputs per ticker (7): `mu`, `mu_rank`, `ret_1d/5d/20d`, `held_prev`, `live`
 * Global inputs (5): daily stats of `mu` and `ret_1d`
