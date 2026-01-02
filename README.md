@@ -1,5 +1,7 @@
 ## AlphaPolicy
 
+Trained on daily Yahoo price data with a fixed US-heavy universe (~518 tickers, S&P 500-style) plus factor assets (SPY, QQQ, VIX, BTC). AlphaModel splits: train ≤ 2024-06-30, val 2024-07-01 → 2024-09-30, test 2024-10-01 → 2024-12-31. PolicyModel trains on 2019-01-03 → 2024-12-30 signals. We report results on 2024-Q4, a 2010–2018 golden set, and a 2025 forward eval.
+
 <img src="run133_epoch7_vs_spy.png" width="1200" height="600" alt="Run133 epoch 7 equity curve vs SPY">
 
 Run133 policy equity curve vs SPY (epoch 7, SPY uses Yahoo Close). 2025-01-03 to 2025-12-15; Sharpe ~1.50, max DD ~17.8%, mean turnover ~0.180, equity ~1.36x.
